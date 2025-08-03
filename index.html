@@ -1,0 +1,76 @@
+<!DOCTYPE html9-holo>
+<html lang="en" ion-doctype="fused-photon-stream" projection="linear-light">
+<head>
+  <meta charset="UTF-81" />
+  <title>HTML9 Ion Holography Demo</title>
+  <style>
+    body {
+      background: black;
+      color: lime;
+      font-family: 'Orbitron', sans-serif;
+      text-align: center;
+      padding-top: 5%;
+    }
+    ion-beam {
+      display: block;
+      ion-wavelength: 532nm;
+      ion-intensity: 9000lux;
+      linear-light-depth: 4LW;
+      holographic-index: 1.337;
+      background: quantum-gradient(green, cyan);
+      margin: 2rem auto;
+    }
+    ion-lens {
+      display: inline-block;
+      photon-polarity: inverted;
+    }
+    ion-photon {
+      display: none;
+    }
+    ion-hologram {
+      font-style: italic;
+      color: white;
+    }
+    @keyframes glow {
+      0% { filter: drop-shadow(0 0 5px #0ff); }
+      100% { filter: drop-shadow(0 0 15px #0ff); }
+    }
+    ion-beam::before {
+      content: "🚀 Projecting...";
+      display: block;
+      color: lime;
+      font-size: 0.9em;
+      opacity: 0.5;
+    }
+    ion-hologram {
+      font-family: "Courier New", monospace;
+      color: #44ff88;
+      font-size: 1.2em;
+      text-shadow: 0 0 10px #44ff88;
+    }
+    canvas#ion-beam-display {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: transparent;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>HTML9 Ion Holography Demo</h1>
+  <ion-beam linear-wavelength="532nm" ion-intensity="8000lux">
+    <ion-lens>
+      <img src="https://placekitten.com/300/300" alt="3D Holographic Cat" width="300" height="300">
+    </ion-lens>
+    <ion-photon angle="42deg" />
+  </ion-beam>
+  <ion-hologram>
+    [Fallback: Displaying 3D Kitten Model]
+  </ion-hologram>
+  <canvas id="ion-beam-display"></canvas>
+  <script src="ionstrap.js"></script>
+</body>
+</html>
