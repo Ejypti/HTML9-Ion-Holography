@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Photonic Ion Beam Tester - HTML9</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #0ff;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    #controls {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: #012;
+      color: #0ff;
+      padding: 10px;
+      border: 1px solid #0ff;
+      z-index: 100;
+    }
+    button {
+      background: #111;
+      color: #0ff;
+      border: 1px solid #0ff;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #beamArea {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="triggerBeam()">Fire Photonic Ion Beam</button>
+  </div>
+  <div id="beamArea"></div>
+
+  <script>
+    function triggerBeam() {
+      const beam = document.createElement('div');
+      beam.style.position = 'absolute';
+      beam.style.left = Math.random() * window.innerWidth + 'px';
+      beam.style.top = Math.random() * window.innerHeight + 'px';
+      beam.style.width = '2px';
+      beam.style.height = '200px';
+      beam.style.background = 'linear-gradient(to top, cyan, transparent)';
+      beam.style.boxShadow = '0 0 20px cyan';
+      beam.style.animation = 'shoot 1s linear forwards';
+      beam.className = 'photonic-beam';
+      document.getElementById('beamArea').appendChild(beam);
+      setTimeout(() => beam.remove(), 1000);
+    }
+
+    // Continuous photonic sparkles
+    setInterval(() => {
+      const sparkle = document.createElement('div');
+      sparkle.style.position = 'absolute';
+      sparkle.style.left = Math.random() * window.innerWidth + 'px';
+      sparkle.style.top = Math.random() * window.innerHeight + 'px';
+      sparkle.style.width = '3px';
+      sparkle.style.height = '3px';
+      sparkle.style.background = '#0ff';
+      sparkle.style.borderRadius = '50%';
+      sparkle.style.opacity = 0.5;
+      sparkle.style.animation = 'fadeout 1.5s forwards';
+      document.getElementById('beamArea').appendChild(sparkle);
+      setTimeout(() => sparkle.remove(), 1500);
+    }, 100);
+
+  </script>
+  <style>
+    @keyframes shoot {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(-300px); opacity: 0; }
+    }
+    @keyframes fadeout {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</body>
+</html>
