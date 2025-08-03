@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HTML9 Ion IDE</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #0ff;
+      font-family: monospace;
+    }
+    #editor {
+      width: 50%;
+      height: 100vh;
+      float: left;
+      background: #111;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    #preview {
+      width: 50%;
+      height: 100vh;
+      float: right;
+      background: #000;
+      border-left: 2px solid #0ff;
+    }
+    #controls {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #012;
+      color: #0ff;
+      padding: 10px;
+      border: 1px solid #0ff;
+      z-index: 100;
+    }
+    button {
+      background: #111;
+      color: #0ff;
+      border: 1px solid #0ff;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #033;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="runCode()">Run Ion Code</button>
+    <button onclick="saveCode()">Save .ion9</button>
+  </div>
+  <textarea id="editor">&lt;ion-beam ion-intensity="9999lux"&gt;
+  &lt;ion-lens&gt;&lt;img src='https://placekitten.com/300/300'&gt;&lt;/ion-lens&gt;
+&lt;/ion-beam&gt;</textarea>
+  <iframe id="preview"></iframe>
+  <script>
+    function runCode() {
+      const code = document.getElementById("editor").value;
+      const doc = document.getElementById("preview").contentDocument;
+      doc.open();
+      doc.write("<!DOCTYPE html><html><head><style>body{background:black;color:lime;}</style></head><body>");
+      doc.write(code);
+      doc.write("<script src='ionstrap.js'><\/script>");
+      doc.write("</body></html>");
+      doc.close();
+    }
+    function saveCode() {
+      const code = document.getElementById("editor").value;
+      const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "hologram.ion9";
+      a.click();
+    }
+  </script>
+</body>
+</html>
