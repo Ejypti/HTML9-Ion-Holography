@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HTML9 Ion Beam Game</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #0ff;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    #controls {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: #012;
+      padding: 10px;
+      border: 1px solid #0ff;
+      z-index: 100;
+    }
+    button, select {
+      background: #111;
+      color: #0ff;
+      border: 1px solid #0ff;
+      padding: 5px;
+      margin: 2px;
+      cursor: pointer;
+    }
+    #hud {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      color: #0ff;
+      background: rgba(0, 32, 64, 0.7);
+      padding: 10px;
+      border: 1px solid #0ff;
+      z-index: 101;
+    }
+    #gameArea {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .beam {
+      position: absolute;
+      width: 3px;
+      height: 200px;
+      background: linear-gradient(to top, cyan, transparent);
+      box-shadow: 0 0 20px cyan;
+      animation: shoot 1s linear forwards;
+      z-index: 1;
+    }
+    .target {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: red;
+      border-radius: 50%;
+      top: -30px;
+      animation: drop 10s linear infinite;
+      z-index: 0;
+    }
+    .sparkle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: #0ff;
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: fadeout 1.5s forwards;
+      z-index: 0;
+    }
+    @keyframes shoot {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(-300px); opacity: 0; }
+    }
+    @keyframes drop {
+      from { top: -30px; }
+      to { top: 100vh; }
+    }
+    @keyframes fadeout {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="fireBeam()">Fire Beam</button>
+    <select id="colorSelect">
+      <option value="cyan" selected>Cyan</option>
+      <option value="magenta">Magenta</option>
+      <option value="lime">Lime</option>
+      <option value="yellow">Yellow</option>
+      <option value="white">White</option>
+    </select>
+  </div>
+  <div id="gameArea"></div>
+  <div id="hud">
+    Beams Fired: <span id="beamCount">0</span><br>
+    Score: <span id="score">0</span><br>
+    Upgrades: <span id="upgrades">None</span>
+  </div>
+  <audio id="pew" src="https://freesound.org/data/previews/341/341695_3248244-lq.mp3"></audio>
+
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const pew = document.getElementById('pew');
+    let beamCount = 0;
+    let score = 0;
+    let upgradeLevel = 0;
+
+    function fireBeam() {
+      const color = document.getElementById('colorSelect').value;
+      const beam = document.createElement('div');
+      beam.className = 'beam';
+      beam.style.background = `linear-gradient(to top, ${color}, transparent)`;
+      beam.style.boxShadow = `0 0 20px ${color}`;
+      const x = Math.random() * window.innerWidth;
+      const y = window.innerHeight;
+      beam.style.left = x + 'px';
+      beam.style.top = y + 'px';
+      gameArea.appendChild(beam);
+      pew.currentTime = 0;
+      pew.play();
+      setTimeout(() => beam.remove(), 1000);
+      document.getElementById('beamCount').textContent = ++beamCount;
+      checkBeamHit(x);
+    }
+
+    function checkBeamHit(xPos) {
+      document.querySelectorAll('.target').forEach(target => {
+        const tx = parseFloat(target.style.left);
+        const ty = parseFloat(target.style.top);
+        if (Math.abs(tx - xPos) < 15 && ty > window.innerHeight - 300) {
+          score += 100;
+          target.remove();
+          document.getElementById('score').textContent = score;
+          if (score >= 500 && upgradeLevel === 0) {
+            upgradeLevel = 1;
+            document.getElementById('upgrades').textContent = "Dual Beam";
+          }
+        }
+      });
+    }
+
+    function spawnTarget() {
+      const target = document.createElement('div');
+      target.className = 'target';
+      target.style.left = Math.random() * (window.innerWidth - 30) + 'px';
+      gameArea.appendChild(target);
+      setTimeout(() => {
+        if (target.parentElement) target.remove();
+      }, 10000);
+    }
+
+    function spawnSparkle() {
+      const sparkle = document.createElement('div');
+      sparkle.className = 'sparkle';
+      sparkle.style.left = Math.random() * window.innerWidth + 'px';
+      sparkle.style.top = Math.random() * window.innerHeight + 'px';
+      gameArea.appendChild(sparkle);
+      setTimeout(() => sparkle.remove(), 1500);
+    }
+
+    setInterval(spawnTarget, 1500);
+    setInterval(spawnSparkle, 100);
+  </script>
+</body>
+</html>
