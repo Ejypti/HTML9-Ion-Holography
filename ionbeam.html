@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>HTML9 Ion Beam Ultimate - Full Game</title>
+<title>HTML9 Ion Beam Ultimate - Full Game with Mobile Touch</title>
 <style>
   body, html {
     margin: 0; padding: 0; overflow: hidden;
@@ -10,6 +10,7 @@
     font-family: monospace;
     color: #0ff;
     user-select: none;
+    touch-action: none; /* prevent default scrolling on touch */
   }
   #controls {
     position: fixed;
@@ -234,6 +235,7 @@
   <div>Health: <span id="healthLevel">3</span></div>
   <div style="margin-top:6px; font-size:12px; color:#08f;">Controls:<br>
     ←/→ Move | Space/Mouse Click: Fire<br>
+    Touch & hold anywhere to fire, drag horizontally to move<br>
     1-4 Switch Beam Type | C: Cool Overheat
   </div>
 </div>
@@ -289,6 +291,10 @@
   let playerX = window.innerWidth / 2;
   const PLAYER_SPEED = 8; // px per key press
   let keysPressed = {};
+
+  // Touch tracking
+  let touchId = null;
+  let lastTouchX = null;
 
   function resizeCanvas() {
     holoGridCanvas.width = window.innerWidth;
@@ -474,13 +480,13 @@
     upgradesSpan.textContent = upgradeLevel === 2 ? 'Triple Beam' : upgradeLevel === 1 ? 'Split Beam' : 'None';
     shieldLevelSpan.textContent = playerShield;
     healthLevelSpan.textContent = playerHealth;
-    updateOverheatBar();
   }
 
-  // Overheat
+  // Overheat system
   const MAX_OVERHEAT = 100;
   const OVERHEAT_INCREASE_RATE = 20;
   const OVERHEAT_COOLDOWN_RATE = 2;
+
   function increaseOverheat() {
     if (overheatCooldown) return;
     overheat += OVERHEAT_INCREASE_RATE;
@@ -858,6 +864,48 @@
     }
   });
 
+  // Touch support
+  window.addEventListener('touchstart', e => {
+    if (!gameRunning) return;
+    if (touchId !== null) return; // already tracking a touch
+    const touch = e.changedTouches[0];
+    touchId = touch.identifier;
+    lastTouchX = touch.clientX;
+    playerX = lastTouchX;
+    startCharge();
+  });
+  window.addEventListener('touchmove', e => {
+    if (!gameRunning) return;
+    for (let touch of e.changedTouches) {
+      if (touch.identifier === touchId) {
+        playerX = touch.clientX;
+        lastTouchX = playerX;
+        e.preventDefault(); // prevent scrolling
+        break;
+      }
+    }
+  }, { passive: false });
+  window.addEventListener('touchend', e => {
+    if (!gameRunning) return;
+    for (let touch of e.changedTouches) {
+      if (touch.identifier === touchId) {
+        releaseCharge();
+        touchId = null;
+        break;
+      }
+    }
+  });
+  window.addEventListener('touchcancel', e => {
+    if (!gameRunning) return;
+    for (let touch of e.changedTouches) {
+      if (touch.identifier === touchId) {
+        cancelCharge();
+        touchId = null;
+        break;
+      }
+    }
+  });
+
   // Wave progression timer
   setInterval(() => {
     if (gameRunning && !bossInstance) {
@@ -883,7 +931,6 @@
 
   // Start game loop
   requestAnimationFrame(gameLoop);
-
 })();
 </script>
 
