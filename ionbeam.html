@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>HTML9 Ion Beam Ultimate - Full Game</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; overflow: hidden;
+    background: black;
+    font-family: monospace;
+    color: #0ff;
+    user-select: none;
+  }
+  #controls {
+    position: fixed;
+    top: 10px; left: 10px;
+    background: rgba(0,16,32,0.85);
+    padding: 12px 14px;
+    border: 1px solid #0ff;
+    z-index: 200;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 320px;
+    border-radius: 6px;
+  }
+  button, select {
+    background: #111;
+    border: 1px solid #0ff;
+    color: #0ff;
+    padding: 7px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+    border-radius: 4px;
+    transition: all 0.25s ease;
+  }
+  button:hover:not(:disabled),
+  select:hover:not(:disabled) {
+    background: #022;
+    border-color: #0ff;
+  }
+  button:disabled {
+    color: #055;
+    border-color: #055;
+    cursor: not-allowed;
+  }
+  #hud {
+    position: fixed;
+    top: 10px; right: 10px;
+    background: rgba(0,16,32,0.85);
+    padding: 14px 16px;
+    border: 1px solid #0ff;
+    z-index: 201;
+    font-size: 14px;
+    line-height: 1.4;
+    max-width: 280px;
+    border-radius: 6px;
+    user-select: none;
+  }
+  #gameArea {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #001520 0%, #000000 75%);
+  }
+  #holoGrid {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    filter: drop-shadow(0 0 7px #0ff);
+  }
+  .beam {
+    position: absolute;
+    border-radius: 2px;
+    box-shadow: 0 0 25px cyan;
+    animation: shoot 0.7s linear forwards;
+    z-index: 50;
+  }
+  .beam.normal {
+    width: 4px;
+    background: linear-gradient(to top, cyan, transparent);
+  }
+  .beam.plasma {
+    width: 6px;
+    background: linear-gradient(to top, #ff0077, transparent);
+    box-shadow: 0 0 30px #ff0077;
+  }
+  .beam.arc {
+    width: 3px;
+    background: linear-gradient(to top, #00ffdd, transparent);
+    box-shadow: 0 0 30px #00ffdd;
+  }
+  .beam.laserweb {
+    width: 5px;
+    background: linear-gradient(to top, #ffff66, transparent);
+    box-shadow: 0 0 40px #ffff66;
+  }
+  .target, .boss {
+    position: absolute;
+    border-radius: 50%;
+    top: -50px;
+    animation-timing-function: linear;
+    user-select: none;
+    cursor: pointer;
+    box-shadow: 0 0 12px;
+  }
+  .target {
+    width: 30px;
+    height: 30px;
+    background: #e55;
+    animation-name: drop;
+    animation-duration: 12s;
+    box-shadow-color: #e55;
+    box-shadow: 0 0 10px #e55;
+  }
+  .boss {
+    width: 90px;
+    height: 90px;
+    background: #a4a;
+    animation-name: dropBoss;
+    animation-duration: 20s;
+    box-shadow: 0 0 20px #a4a;
+  }
+  .powerup {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    box-shadow: 0 0 12px;
+    top: -30px;
+    animation: dropPower 10s linear forwards;
+    cursor: pointer;
+    user-select: none;
+    z-index: 30;
+  }
+  .powerup.heal {
+    background: #f44;
+    box-shadow: 0 0 15px #f44;
+  }
+  .powerup.score {
+    background: gold;
+    box-shadow: 0 0 15px gold;
+  }
+  .powerup.coolant {
+    background: #0ff;
+    box-shadow: 0 0 15px #0ff;
+  }
+  .powerup.shield {
+    background: #44f;
+    box-shadow: 0 0 15px #44f;
+  }
+  #overheatBarContainer {
+    width: 100%;
+    background: #002220;
+    border: 1px solid #0ff;
+    margin-top: 6px;
+    height: 14px;
+    border-radius: 7px;
+  }
+  #overheatBar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ff0044, #ffbb00);
+    border-radius: 7px;
+    transition: width 0.2s ease;
+  }
+  #playerIndicator {
+    position: fixed;
+    bottom: 20px;
+    width: 6px;
+    height: 24px;
+    background: #0ff;
+    left: 50%;
+    margin-left: -3px;
+    border-radius: 3px;
+    box-shadow: 0 0 8px #0ff;
+    pointer-events: none;
+    z-index: 300;
+  }
+  @keyframes shoot {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-400px); opacity: 0; }
+  }
+  @keyframes drop {
+    from { top: -50px; }
+    to { top: 110vh; }
+  }
+  @keyframes dropBoss {
+    0% { top: -90px; left: 50vw; }
+    50% { left: calc(50vw + 150px); top: 50vh; }
+    100% { top: 110vh; left: 50vw; }
+  }
+  @keyframes dropPower {
+    from { top: -30px; }
+    to { top: 110vh; }
+  }
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <button id="chargeBtn" onmousedown="startCharge()" onmouseup="releaseCharge()" onmouseleave="cancelCharge()">Charge Beam</button>
+  <select id="colorSelect" title="Choose beam color">
+    <option value="cyan" selected>Cyan</option>
+    <option value="magenta">Magenta</option>
+    <option value="lime">Lime</option>
+    <option value="yellow">Yellow</option>
+    <option value="white">White</option>
+  </select>
+  <select id="beamType" title="Choose beam type">
+    <option value="normal" selected>Normal</option>
+    <option value="plasma" disabled>Plasma (Unlock lvl 3)</option>
+    <option value="arc" disabled>Arc Chain (Unlock lvl 5)</option>
+    <option value="laserweb" disabled>Laser Web (Unlock lvl 7)</option>
+  </select>
+</div>
+
+<div id="hud">
+  <div>Wave: <span id="waveNum">1</span></div>
+  <div>Beams Fired: <span id="beamCount">0</span></div>
+  <div>Score: <span id="score">0</span></div>
+  <div>Upgrades: <span id="upgrades">None</span></div>
+  <div>Charge: <span id="chargeLevel">0</span></div>
+  <div>Overheat:
+    <div id="overheatBarContainer">
+      <div id="overheatBar"></div>
+    </div>
+  </div>
+  <div>Shield: <span id="shieldLevel">0</span></div>
+  <div>Health: <span id="healthLevel">3</span></div>
+  <div style="margin-top:6px; font-size:12px; color:#08f;">Controls:<br>
+    ←/→ Move | Space/Mouse Click: Fire<br>
+    1-4 Switch Beam Type | C: Cool Overheat
+  </div>
+</div>
+
+<div id="playerIndicator" style="left:50%;"></div>
+
+<canvas id="holoGrid"></canvas>
+<div id="gameArea"></div>
+
+<audio id="pew" src="https://freesound.org/data/previews/341/341695_3248244-lq.mp3" preload="auto"></audio>
+<audio id="bossShot" src="https://freesound.org/data/previews/269/269154_5121236-lq.mp3" preload="auto"></audio>
+
+<script>
+(() => {
+  const gameArea = document.getElementById('gameArea');
+  const pew = document.getElementById('pew');
+  const bossShot = document.getElementById('bossShot');
+  const chargeBtn = document.getElementById('chargeBtn');
+  const colorSelect = document.getElementById('colorSelect');
+  const beamTypeSelect = document.getElementById('beamType');
+  const chargeBar = document.getElementById('chargeLevel');
+  const beamCountSpan = document.getElementById('beamCount');
+  const scoreSpan = document.getElementById('score');
+  const upgradesSpan = document.getElementById('upgrades');
+  const waveNumSpan = document.getElementById('waveNum');
+  const overheatBar = document.getElementById('overheatBar');
+  const shieldLevelSpan = document.getElementById('shieldLevel');
+  const healthLevelSpan = document.getElementById('healthLevel');
+  const holoGridCanvas = document.getElementById('holoGrid');
+  const holoCtx = holoGridCanvas.getContext('2d');
+  const playerIndicator = document.getElementById('playerIndicator');
+
+  // State
+  let beamCount = 0;
+  let score = 0;
+  let wave = 1;
+  let upgradeLevel = 0;
+  let charging = false;
+  let charge = 0;
+  let chargeInterval;
+  let overheat = 0;
+  let overheatCooldown = false;
+  let enemies = [];
+  let powerups = [];
+  let boss = null;
+  let gameRunning = true;
+  let waveInterval = 30000;
+  let beamTypeUnlockedLevels = { plasma: 3, arc: 5, laserweb: 7 };
+  let playerShield = 0;
+  let playerHealth = 3;
+
+  // Player aiming position
+  let playerX = window.innerWidth / 2;
+  const PLAYER_SPEED = 8; // px per key press
+  let keysPressed = {};
+
+  function resizeCanvas() {
+    holoGridCanvas.width = window.innerWidth;
+    holoGridCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Draw holographic grid background
+  let gridOffset = 0;
+  function drawHoloGrid() {
+    const w = holoGridCanvas.width;
+    const h = holoGridCanvas.height;
+    holoCtx.clearRect(0, 0, w, h);
+    holoCtx.strokeStyle = 'rgba(0,255,255,0.15)';
+    holoCtx.lineWidth = 1;
+
+    const spacing = 40;
+    gridOffset += 0.5;
+    if (gridOffset >= spacing) gridOffset = 0;
+
+    for (let x = -spacing + gridOffset; x < w; x += spacing) {
+      holoCtx.beginPath();
+      holoCtx.moveTo(x, 0);
+      holoCtx.lineTo(x, h);
+      holoCtx.stroke();
+    }
+    for (let y = -spacing + gridOffset; y < h; y += spacing) {
+      holoCtx.beginPath();
+      holoCtx.moveTo(0, y);
+      holoCtx.lineTo(w, y);
+      holoCtx.stroke();
+    }
+
+    holoCtx.strokeStyle = 'rgba(0,255,255,0.1)';
+    for (let i = 0; i < 10; i++) {
+      const px = (i * 150 + gridOffset * 3) % w;
+      holoCtx.beginPath();
+      holoCtx.moveTo(px, 0);
+      holoCtx.lineTo(px + 100, h);
+      holoCtx.stroke();
+    }
+  }
+
+  // Beam class
+  class Beam {
+    constructor(x, type, color) {
+      this.x = x;
+      this.type = type;
+      this.color = color;
+      this.dom = document.createElement('div');
+      this.dom.className = 'beam ' + type;
+      this.dom.style.background = this.getGradient();
+      this.dom.style.boxShadow = `0 0 25px ${color}`;
+      this.dom.style.left = x + 'px';
+      this.dom.style.top = window.innerHeight + 'px';
+      gameArea.appendChild(this.dom);
+      this.animationDuration = 700;
+      this.removeTimeout = setTimeout(() => this.remove(), this.animationDuration);
+      this.startTime = performance.now();
+    }
+    getGradient() {
+      switch (this.type) {
+        case 'plasma': return `linear-gradient(to top, #ff0077, transparent)`;
+        case 'arc': return `linear-gradient(to top, #00ffdd, transparent)`;
+        case 'laserweb': return `linear-gradient(to top, #ffff66, transparent)`;
+        default: return `linear-gradient(to top, ${this.color}, transparent)`;
+      }
+    }
+    remove() {
+      if (this.dom) {
+        gameArea.removeChild(this.dom);
+        this.dom = null;
+      }
+    }
+  }
+
+  // Enemy class
+  class Enemy {
+    constructor(isBoss = false) {
+      this.isBoss = isBoss;
+      this.dom = document.createElement('div');
+      this.dom.className = isBoss ? 'boss' : 'target';
+      this.x = Math.random() * (window.innerWidth - (isBoss ? 90 : 30));
+      this.y = -50;
+      this.speed = isBoss ? 0.5 : 1 + Math.random();
+      this.health = isBoss ? 10 + wave * 2 : 1;
+      this.dom.style.left = this.x + 'px';
+      this.dom.style.top = this.y + 'px';
+      gameArea.appendChild(this.dom);
+
+      if (isBoss) {
+        this.aiDirection = 1;
+        this.aiSpeedX = 1 + wave * 0.2;
+      }
+    }
+    update() {
+      this.y += this.speed;
+      if (this.isBoss) {
+        this.x += this.aiSpeedX * this.aiDirection;
+        if (this.x <= 0 || this.x + 90 >= window.innerWidth) {
+          this.aiDirection *= -1;
+        }
+      }
+      this.dom.style.top = this.y + 'px';
+      this.dom.style.left = this.x + 'px';
+    }
+    hit(damage) {
+      this.health -= damage;
+      if (this.health <= 0) {
+        this.die();
+      } else {
+        this.dom.style.filter = 'brightness(2)';
+        setTimeout(() => {
+          if (this.dom) this.dom.style.filter = '';
+        }, 100);
+      }
+    }
+    die() {
+      if (!this.dom) return;
+      gameArea.removeChild(this.dom);
+      this.dom = null;
+    }
+  }
+
+  // PowerUp class
+  class PowerUp {
+    constructor(type) {
+      this.type = type;
+      this.dom = document.createElement('div');
+      this.dom.className = 'powerup ' + type;
+      this.x = Math.random() * (window.innerWidth - 25);
+      this.y = -30;
+      this.speed = 1;
+      this.dom.style.left = this.x + 'px';
+      this.dom.style.top = this.y + 'px';
+      gameArea.appendChild(this.dom);
+      this.dom.title = `Power-up: ${type}`;
+      this.collected = false;
+    }
+    update() {
+      this.y += this.speed;
+      this.dom.style.top = this.y + 'px';
+    }
+    collect() {
+      this.collected = true;
+      if (!this.dom) return;
+      gameArea.removeChild(this.dom);
+      this.dom = null;
+    }
+  }
+
+  // Variables
+  let activeBeams = [];
+  let activeEnemies = [];
+  let activePowerUps = [];
+  let bossInstance = null;
+
+  // Save / Load
+  function saveGame() {
+    const saveData = { score, wave, upgradeLevel, playerShield, playerHealth };
+    localStorage.setItem('html9IonBeamSave', JSON.stringify(saveData));
+  }
+  function loadGame() {
+    const saveData = JSON.parse(localStorage.getItem('html9IonBeamSave'));
+    if (saveData) {
+      score = saveData.score || 0;
+      wave = saveData.wave || 1;
+      upgradeLevel = saveData.upgradeLevel || 0;
+      playerShield = saveData.playerShield || 0;
+      playerHealth = saveData.playerHealth || 3;
+      updateHUD();
+      updateBeamTypeUnlocks();
+    }
+  }
+  loadGame();
+
+  // HUD update
+  function updateHUD() {
+    beamCountSpan.textContent = beamCount;
+    scoreSpan.textContent = score;
+    waveNumSpan.textContent = wave;
+    upgradesSpan.textContent = upgradeLevel === 2 ? 'Triple Beam' : upgradeLevel === 1 ? 'Split Beam' : 'None';
+    shieldLevelSpan.textContent = playerShield;
+    healthLevelSpan.textContent = playerHealth;
+    updateOverheatBar();
+  }
+
+  // Overheat
+  const MAX_OVERHEAT = 100;
+  const OVERHEAT_INCREASE_RATE = 20;
+  const OVERHEAT_COOLDOWN_RATE = 2;
+  function increaseOverheat() {
+    if (overheatCooldown) return;
+    overheat += OVERHEAT_INCREASE_RATE;
+    if (overheat >= MAX_OVERHEAT) {
+      overheat = MAX_OVERHEAT;
+      overheatCooldown = true;
+      chargeBtn.disabled = true;
+      chargeBtn.textContent = 'Cooldown...';
+    }
+    updateOverheatBar();
+  }
+  function coolDownOverheat() {
+    if (overheat > 0) {
+      overheat -= OVERHEAT_COOLDOWN_RATE;
+      if (overheat < 0) overheat = 0;
+      updateOverheatBar();
+    }
+    if (overheatCooldown && overheat <= 0) {
+      overheatCooldown = false;
+      chargeBtn.disabled = false;
+      chargeBtn.textContent = 'Charge Beam';
+    }
+  }
+  function updateOverheatBar() {
+    overheatBar.style.width = (overheat / MAX_OVERHEAT * 100) + '%';
+  }
+
+  // Charge beam controls
+  function startCharge() {
+    if (overheatCooldown) return;
+    if (charging) return;
+    charging = true;
+    charge = 0;
+    chargeBar.textContent = charge;
+    chargeInterval = setInterval(() => {
+      if (charging && charge < 100) {
+        charge++;
+        chargeBar.textContent = charge;
+      }
+    }, 25);
+  }
+  function releaseCharge() {
+    if (!charging) return;
+    clearInterval(chargeInterval);
+    charging = false;
+    if (overheatCooldown) return;
+    let beamsToFire = 1 + upgradeLevel;
+    if (charge < 10) beamsToFire = 1; // Minimum charge: 10 for upgrades
+
+    let beamOffsets = [];
+    if (beamsToFire === 1) beamOffsets = [0];
+    else if (beamsToFire === 2) beamOffsets = [-15, 15];
+    else if (beamsToFire >= 3) beamOffsets = [-30, 0, 30];
+
+    const beamType = beamTypeSelect.value;
+    const color = colorSelect.value;
+
+    beamOffsets.forEach(offset => fireBeam(playerX + offset, beamType, color));
+
+    beamCount += beamsToFire;
+    beamCountSpan.textContent = beamCount;
+
+    increaseOverheat();
+
+    charge = 0;
+    chargeBar.textContent = 0;
+
+    saveGame();
+  }
+  function cancelCharge() {
+    charging = false;
+    clearInterval(chargeInterval);
+    chargeBar.textContent = 0;
+  }
+
+  // Fire a single beam
+  function fireBeam(x, type, color) {
+    const beam = new Beam(x, type, color);
+    activeBeams.push(beam);
+    pew.currentTime = 0;
+    pew.play();
+  }
+
+  // Spawn enemies
+  function spawnEnemy() {
+    if (bossInstance) return; // Wait till boss defeated
+    const enemyCount = Math.min(3 + wave, 12);
+    if (activeEnemies.length < enemyCount) {
+      let enemy = new Enemy(false);
+      activeEnemies.push(enemy);
+    }
+  }
+  function spawnBoss() {
+    if (bossInstance) return;
+    bossInstance = new Enemy(true);
+    activeEnemies.push(bossInstance);
+  }
+
+  // Spawn power-ups randomly
+  function spawnPowerUp() {
+    if (activePowerUps.length > 3) return;
+    const types = ['heal', 'score', 'coolant', 'shield'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const pu = new PowerUp(type);
+    activePowerUps.push(pu);
+  }
+
+  // Check collisions
+  function checkCollisions() {
+    activeBeams.forEach((beam, bIdx) => {
+      activeEnemies.forEach((enemy, eIdx) => {
+        if (!enemy.dom || !beam.dom) return;
+        const beamX = beam.x;
+        const enemyRect = enemy.dom.getBoundingClientRect();
+        if (beamX > enemyRect.left && beamX < enemyRect.right) {
+          const beamY = window.innerHeight - (performance.now() - beam.startTime) / beam.animationDuration * 400;
+          if (beamY < enemyRect.bottom && beamY > enemyRect.top) {
+            enemy.hit(1 + upgradeLevel);
+            beam.remove();
+            activeBeams.splice(bIdx, 1);
+            if (!enemy.dom) {
+              if (enemy.isBoss) {
+                score += 5000;
+                bossInstance = null;
+                nextWave();
+              } else {
+                score += 100;
+              }
+              if (Math.random() < 0.3) spawnPowerUp();
+              updateUpgrades();
+              updateHUD();
+              saveGame();
+            }
+          }
+        }
+      });
+    });
+
+    activePowerUps.forEach((pu, idx) => {
+      if (!pu.dom || pu.collected) return;
+      const puRect = pu.dom.getBoundingClientRect();
+      const playerY = window.innerHeight - 20;
+      if (puRect.left < playerX && puRect.right > playerX && puRect.bottom > playerY) {
+        collectPowerUp(pu);
+        pu.collect();
+        activePowerUps.splice(idx, 1);
+      }
+    });
+  }
+
+  // Collect power-up effects
+  function collectPowerUp(pu) {
+    switch(pu.type) {
+      case 'heal':
+        if (playerHealth < 5) playerHealth++;
+        break;
+      case 'score':
+        score += 500;
+        break;
+      case 'coolant':
+        overheat -= 50;
+        if (overheat < 0) overheat = 0;
+        updateOverheatBar();
+        break;
+      case 'shield':
+        playerShield = 3;
+        break;
+    }
+    updateHUD();
+    saveGame();
+  }
+
+  // Update upgrades based on score
+  function updateUpgrades() {
+    if (score >= 2000 && upgradeLevel < 2) {
+      upgradeLevel = 2;
+      upgradesSpan.textContent = 'Triple Beam';
+    } else if (score >= 1000 && upgradeLevel < 1) {
+      upgradeLevel = 1;
+      upgradesSpan.textContent = 'Split Beam';
+    }
+    updateBeamTypeUnlocks();
+  }
+  function updateBeamTypeUnlocks() {
+    Object.entries(beamTypeUnlockedLevels).forEach(([type, lvl]) => {
+      const option = beamTypeSelect.querySelector(`option[value="${type}"]`);
+      if (wave >= lvl) {
+        option.disabled = false;
+      } else {
+        option.disabled = true;
+        if (beamTypeSelect.value === type) {
+          beamTypeSelect.value = 'normal';
+        }
+      }
+    });
+  }
+
+  // Wave management
+  function nextWave() {
+    wave++;
+    waveNumSpan.textContent = wave;
+    spawnBossIfNeeded();
+    saveGame();
+  }
+  function spawnBossIfNeeded() {
+    if (wave % 5 === 0) {
+      spawnBoss();
+    }
+  }
+
+  // Boss shooting back mechanic
+  function bossShoot() {
+    if (!bossInstance || !bossInstance.dom) return;
+    const projectile = document.createElement('div');
+    projectile.style.position = 'absolute';
+    projectile.style.width = '6px';
+    projectile.style.height = '20px';
+    projectile.style.background = 'purple';
+    projectile.style.borderRadius = '3px';
+    projectile.style.left = (bossInstance.x + 40) + 'px';
+    projectile.style.top = (bossInstance.y + 90) + 'px';
+    projectile.style.zIndex = 100;
+    gameArea.appendChild(projectile);
+
+    let posY = bossInstance.y + 90;
+    const speed = 5;
+
+    bossShot.currentTime = 0;
+    bossShot.play();
+
+    function move() {
+      posY += speed;
+      if (posY > window.innerHeight) {
+        gameArea.removeChild(projectile);
+        return;
+      }
+      projectile.style.top = posY + 'px';
+
+      const playerY = window.innerHeight - 20;
+      const projRect = projectile.getBoundingClientRect();
+
+      if (projRect.left < playerX && projRect.right > playerX && projRect.bottom > playerY) {
+        if (playerShield > 0) {
+          playerShield--;
+        } else {
+          playerHealth--;
+          if (playerHealth <= 0) {
+            alert('Game Over! Reload to try again.');
+            gameRunning = false;
+          }
+        }
+        updateHUD();
+        gameArea.removeChild(projectile);
+        return;
+      }
+      requestAnimationFrame(move);
+    }
+    requestAnimationFrame(move);
+  }
+
+  // Game loop
+  function gameLoop() {
+    if (!gameRunning) return;
+
+    activeEnemies = activeEnemies.filter(e => e.dom);
+    activeBeams = activeBeams.filter(b => b.dom);
+    activePowerUps = activePowerUps.filter(pu => pu.dom && !pu.collected);
+
+    activeEnemies.forEach(enemy => enemy.update());
+    activePowerUps.forEach(pu => pu.update());
+
+    checkCollisions();
+
+    activeEnemies.forEach((enemy, i) => {
+      if (!enemy.isBoss && enemy.y > window.innerHeight + 20) {
+        enemy.die();
+        activeEnemies.splice(i, 1);
+        score -= 50;
+        if (score < 0) score = 0;
+        updateHUD();
+      }
+    });
+
+    if (activeEnemies.length < Math.min(3 + wave, 12) && !bossInstance) {
+      spawnEnemy();
+    }
+
+    if (Math.random() < 0.005) {
+      spawnPowerUp();
+    }
+
+    coolDownOverheat();
+
+    if (bossInstance && bossInstance.dom && Math.random() < 0.01) {
+      bossShoot();
+    }
+
+    drawHoloGrid();
+
+    // Update player indicator position
+    const maxX = window.innerWidth - 10;
+    if (playerX < 10) playerX = 10;
+    if (playerX > maxX) playerX = maxX;
+    playerIndicator.style.left = playerX + 'px';
+
+    // Keyboard continuous movement
+    if (keysPressed['ArrowLeft'] || keysPressed['a']) {
+      playerX -= PLAYER_SPEED;
+    }
+    if (keysPressed['ArrowRight'] || keysPressed['d']) {
+      playerX += PLAYER_SPEED;
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Keyboard and mouse event handlers
+  window.addEventListener('keydown', e => {
+    if (!gameRunning) return;
+
+    keysPressed[e.key] = true;
+
+    switch(e.key) {
+      case ' ': // Spacebar - start charge
+        if (!charging) startCharge();
+        e.preventDefault();
+        break;
+      case 'c': // Cool overheat
+      case 'C':
+        if (overheat > 0) {
+          overheat -= 30;
+          if (overheat < 0) overheat = 0;
+          updateOverheatBar();
+        }
+        break;
+      case '1':
+        if (!beamTypeSelect.querySelector('option[value="normal"]').disabled) beamTypeSelect.value = 'normal';
+        break;
+      case '2':
+        if (!beamTypeSelect.querySelector('option[value="plasma"]').disabled) beamTypeSelect.value = 'plasma';
+        break;
+      case '3':
+        if (!beamTypeSelect.querySelector('option[value="arc"]').disabled) beamTypeSelect.value = 'arc';
+        break;
+      case '4':
+        if (!beamTypeSelect.querySelector('option[value="laserweb"]').disabled) beamTypeSelect.value = 'laserweb';
+        break;
+    }
+  });
+
+  window.addEventListener('keyup', e => {
+    if (!gameRunning) return;
+
+    keysPressed[e.key] = false;
+
+    if (e.key === ' ') {
+      releaseCharge();
+    }
+  });
+
+  window.addEventListener('mousemove', e => {
+    playerX = e.clientX;
+  });
+
+  window.addEventListener('mousedown', e => {
+    if (!gameRunning) return;
+    if (e.button === 0) { // Left click
+      startCharge();
+    }
+  });
+  window.addEventListener('mouseup', e => {
+    if (!gameRunning) return;
+    if (e.button === 0) { // Left click
+      releaseCharge();
+    }
+  });
+
+  // Wave progression timer
+  setInterval(() => {
+    if (gameRunning && !bossInstance) {
+      nextWave();
+    }
+  }, waveInterval);
+
+  // Cancel charge if mouse leaves button
+  chargeBtn.addEventListener('mouseleave', cancelCharge);
+
+  // Save periodically
+  setInterval(() => {
+    if (gameRunning) saveGame();
+  }, 10000);
+
+  // Warn user if leaving page
+  window.addEventListener('beforeunload', e => {
+    if (gameRunning) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  // Start game loop
+  requestAnimationFrame(gameLoop);
+
+})();
+</script>
+
+</body>
+</html>
